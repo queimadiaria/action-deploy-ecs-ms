@@ -1,0 +1,110 @@
+name: 'Deploy Service ECS'
+description: 'Queima Labs DevOps Stack - Deploy Microservice - services no ECS da AWS'
+inputs:
+  ecs-cluster:  # ID Service
+    description: Cluster name to be deploy to
+    required: true
+    default: 'queima-microservice-dev'
+outputs:
+  random-number:
+    description: "Random number"
+    value: ${{ steps.random-number-generator.outputs.random-id }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Vault
+      shell: bash
+      run: |
+        wget https://releases.hashicorp.com/vault/1.7.3/vault_1.7.3_linux_amd64.zip -O vault.zip \
+        && sudo unzip vault.zip -d /usr/local/bin && rm vault.zip
+        wget https://queima-artifacts.s3.amazonaws.com/awsqueima.zip -O /tmp/awsqueima.zip \
+        && sudo unzip /tmp/awsqueima.zip -d /usr/local/bin \
+        && sudo chmod +x /usr/local/bin/awsqueima
+        awsqueima -l
+
+    - name: Configure AWS Credentials
+      shell: bash
+      run: |
+        $(awsqueima -a dev)
+        cat>>$GITHUB_ENV<<EOF
+        AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+        AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+        AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+        AWS_REGION=${AWS_DEFAULT_REGION}
+        EOF
+    
+    - name: Login to Amazon ECR
+      shell: bash
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+            
+    - name: Get Environment names
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment-acronym }}
+        CONFIG: ${{ inputs.config }}
+      run: |
+        sh config/environment.config.sh
+        cat .env
+    
+    - name: Configure NPM
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN  }}
+      run: |
+        cat <<EOF > .npmrc
+        @queimadiaria:registry=https://npm.pkg.github.com/
+        //npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN
+        EOF
+
+    - name: Build, tag, and push image to Amazon ECR
+      shell: bash
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build \
+          --build-arg NODE_ENV=development \
+          --build-arg NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }} \
+          --build-arg NEW_RELIC_APP_NAME=${SERVICE_NAME}-${STAGE} \
+          -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
+
+    - name: Get Task Definition
+      shell: bash
+      run: |
+        aws ecs describe-task-definition \
+            --task-definition "task-${SERVICE_NAME}" \
+            --region "us-east-1" \
+            --query taskDefinition | \
+          jq --arg img "${SERVICE_NAME}" \
+            '.containerDefinitions[0].name = $img' > taskDefinition.json
+          
+        cat taskDefinition.json
+
+        CLUSTER=$(aws ecs list-clusters | \
+          jq ".clusterArns[]" -r | \
+          cut -d "/" -f2 | \
+          grep ${{ inputs.stage }})
+
+        echo "CLUSTER=$CLUSTER" >> $GITHUB_ENV
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: taskDefinition.json
+        container-name: ${{ inputs.service-name }}
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1.4.7
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ inputs.service-name }}
+        cluster: ${{ env.CLUSTER }}
+        wait-for-service-stability: false
