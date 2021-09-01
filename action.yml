@@ -12,8 +12,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v2
-
     - name: Setup Vault
       shell: bash
       run: |
@@ -94,18 +92,3 @@ runs:
 
         echo "CLUSTER=$CLUSTER" >> $GITHUB_ENV
 
-    - name: Fill in the new image ID in the Amazon ECS task definition
-      id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: taskDefinition.json
-        container-name: ${{ inputs.service-name }}
-        image: ${{ steps.build-image.outputs.image }}
-
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v1.4.7
-      with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ inputs.service-name }}
-        cluster: ${{ env.CLUSTER }}
-        wait-for-service-stability: false
