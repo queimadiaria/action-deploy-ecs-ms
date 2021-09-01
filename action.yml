@@ -28,7 +28,10 @@ runs:
         ENVIRONMENT: ${{ inputs.environment_acronym }}
         CONFIG: ${{ inputs.config }}
       run: |
-        source $(echo $CONFIG | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]")
+        cat>configs<<EOF
+        $(echo $CONFIG | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]")
+        EOF
+        source configs
         sh config/environment.config.sh
         cat .env
     
