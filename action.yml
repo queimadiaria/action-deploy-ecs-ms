@@ -11,33 +11,7 @@ outputs:
     value: ${{ steps.random-number-generator.outputs.random-id }}
 runs:
   using: "composite"
-  steps:
-    - name: Setup Vault
-      shell: bash
-      run: |
-        wget https://releases.hashicorp.com/vault/1.7.3/vault_1.7.3_linux_amd64.zip -O vault.zip \
-        && sudo unzip vault.zip -d /usr/local/bin && rm vault.zip
-        wget https://queima-artifacts.s3.amazonaws.com/awsqueima.zip -O /tmp/awsqueima.zip \
-        && sudo unzip /tmp/awsqueima.zip -d /usr/local/bin \
-        && sudo chmod +x /usr/local/bin/awsqueima
-        awsqueima -l
-
-    - name: Configure AWS Credentials
-      shell: bash
-      run: |
-        $(awsqueima -a dev)
-        cat>>$GITHUB_ENV<<EOF
-        AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-        AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-        AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
-        AWS_REGION=${AWS_DEFAULT_REGION}
-        EOF
-    
-    - name: Login to Amazon ECR
-      shell: bash
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-            
+  steps:           
     - name: Get Environment names
       shell: bash
       env:
@@ -58,6 +32,7 @@ runs:
         //npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN
         EOF
 
+
     - name: Build, tag, and push image to Amazon ECR
       shell: bash
       id: build-image
@@ -68,7 +43,7 @@ runs:
         docker build \
           --build-arg NODE_ENV=development \
           --build-arg NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }} \
-          --build-arg NEW_RELIC_APP_NAME=${SERVICE_NAME}-${STAGE} \
+          --build-arg NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
           -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
