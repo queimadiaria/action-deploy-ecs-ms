@@ -14,7 +14,7 @@ inputs:
   config:
     description: String JSON to be mape
     required: true
-    default: '{"NODE_ENV":"dev"}'
+    default: "{\"NODE_ENV\":\"local\"}"
 outputs:
   random-number:
     description: "Random number"
@@ -28,7 +28,7 @@ runs:
         ENVIRONMENT: ${{ inputs.environment_acronym }}
         CONFIG: ${{ inputs.config }}
       run: |
-        source $(echo CONFIG | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]")
+        source $(echo $CONFIG | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]")
         sh config/environment.config.sh
         cat .env
     
