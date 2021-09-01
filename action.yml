@@ -7,6 +7,14 @@ inputs:
   access_token: 
     description: Personal Access Token scope read:pkg
     required: true
+  environment_acronym: 
+    description: Environment acronym to configure environment variables
+    required: true
+    default: dev
+  config:
+    description: String JSON to be mape
+    required: true
+    default: '{"NODE_ENV":"dev"}'
 outputs:
   random-number:
     description: "Random number"
@@ -17,7 +25,7 @@ runs:
     - name: Get Environment names
       shell: bash
       env:
-        ENVIRONMENT: ${{ inputs.environment-acronym }}
+        ENVIRONMENT: ${{ inputs.environment_acronym }}
         CONFIG: ${{ inputs.config }}
       run: |
         source $(echo CONFIG | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]")
