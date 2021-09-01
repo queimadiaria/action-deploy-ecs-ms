@@ -1,10 +1,12 @@
 name: 'Deploy Service ECS'
 description: 'Queima Labs DevOps Stack - Deploy Microservice - services no ECS da AWS'
 inputs:
-  ecs-cluster:  # ID Service
-    description: Cluster name to be deploy to
+  new_relic_license: 
+    description: New Relic License Key
     required: true
-    default: 'queima-microservice-dev'
+  access_token: 
+    description: Personal Access Token scope read:pkg
+    required: true
 outputs:
   random-number:
     description: "Random number"
@@ -25,7 +27,7 @@ runs:
     - name: Configure NPM
       shell: bash
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN  }}
+        NODE_AUTH_TOKEN: ${{ inputs.access_token  }}
       run: |
         cat <<EOF > .npmrc
         @queimadiaria:registry=https://npm.pkg.github.com/
@@ -42,7 +44,7 @@ runs:
       run: |
         docker build \
           --build-arg NODE_ENV=development \
-          --build-arg NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }} \
+          --build-arg NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
           --build-arg NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
           -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
