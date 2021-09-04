@@ -12,9 +12,13 @@ inputs:
     required: true
     default: dev
   config:
-    description: String JSON to be mape
+    description: String JSON to be map
     required: true
     default: "{\"NODE_ENV\":\"local\"}"
+  enable_task_definition:
+    description: Enable returning task definition
+    required: true
+    default: 'true'
   ecr:
     description: ECR Repository
     required: true
@@ -66,7 +70,10 @@ runs:
 
     - name: Get Task Definition
       shell: bash
+      env:
+        ENABLE_TASK: ${{ inputs.enable_task_definition }}
       run: |
+        [ "$ENABLE_TASK" = true ] || exit 0
         aws ecs describe-task-definition \
             --task-definition "task-${SERVICE_NAME}" \
             --region "us-east-1" \
