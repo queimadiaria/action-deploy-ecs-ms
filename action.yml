@@ -26,9 +26,9 @@ inputs:
     description: ECR Repository
     required: true
 outputs:
-  random-number:
-    description: "Random number"
-    value: ${{ steps.random-number-generator.outputs.random-id }}
+  imager:
+    description: "Image name complete"
+    value: ${{ steps.build-image.outputs.image }}
 runs:
   using: "composite"
   steps:           
