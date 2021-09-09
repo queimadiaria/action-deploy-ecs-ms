@@ -1,6 +1,9 @@
 name: 'Deploy Service ECS'
 description: 'Queima Labs DevOps Stack - Deploy Microservice - services no ECS da AWS'
 inputs:
+  stage:
+    description: Stage where will be deployed
+    required: true
   new_relic_license: 
     description: New Relic License Key
     required: true
@@ -74,6 +77,7 @@ runs:
         ENABLE_TASK: ${{ inputs.enable_task_definition }}
       run: |
         [ "$ENABLE_TASK" = true ] || exit 0
+        echo "Describing task-${SERVICE_NAME}"
         aws ecs describe-task-definition \
             --task-definition "task-${SERVICE_NAME}" \
             --region "us-east-1" \
