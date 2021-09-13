@@ -37,7 +37,6 @@ runs:
       run: |
         wget -q https://github.com/moby/buildkit/releases/download/v0.9.0/buildkit-v0.9.0.linux-amd64.tar.gz -O /tmp/buildkit.tar.gz
         sudo tar vxfz /tmp/buildkit.tar.gz -C /usr/local/
-        sudo buildkitd --oci-worker=false --containerd-worker=true
 
     - name: Get Environment names
       shell: bash
@@ -70,6 +69,7 @@ runs:
         ECR_REGISTRY: ${{ inputs.ecr }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
+        sudo buildkitd --oci-worker=false --containerd-worker=true &;
         sudo buildctl build \
           --frontend=dockerfile.v0 \
           --opt build-arg:NODE_ENV=development \
