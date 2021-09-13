@@ -69,7 +69,7 @@ runs:
         ECR_REGISTRY: ${{ inputs.ecr }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # sudo buildkitd --oci-worker=false --containerd-worker=true &
+        (sudo buildkitd --oci-worker=false --containerd-worker=true || echo working) & 
         if [ -f "/tmp/dockercache/index.json" ];
         then
           sudo buildctl build \
