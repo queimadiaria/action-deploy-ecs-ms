@@ -70,6 +70,7 @@ runs:
         IMAGE_TAG: ${{ github.sha }}
       run: |
         (sudo buildkitd --oci-worker=false --containerd-worker=true || echo working) & 
+        sleep 3
         if [ -f "/tmp/dockercache/index.json" ];
         then
           sudo buildctl build \
