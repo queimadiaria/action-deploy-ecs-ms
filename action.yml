@@ -31,7 +31,18 @@ outputs:
     value: ${{ steps.build-image.outputs.image }}
 runs:
   using: "composite"
-  steps:           
+  steps:
+    - name: Change docker storage placement
+      shell: bash
+      run: |
+        mv /var/docker/images  /tmp/cache
+    - name: Setup Buildctl
+      shell: bash
+      run: |
+        wget -q https://github.com/moby/buildkit/releases/download/v0.9.0/buildkit-v0.9.0.linux-amd64.tar.gz -O /tmp/buildkit.tar.gz
+        sudo tar vxfz /tmp/buildkit.tar.gz -C /usr/local/
+        sudo buildkitd --oci-worker=false --containerd-worker=true
+
     - name: Get Environment names
       shell: bash
       env:
@@ -63,12 +74,14 @@ runs:
         ECR_REGISTRY: ${{ inputs.ecr }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build \
-          --build-arg NODE_ENV=development \
-          --build-arg NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
-          --build-arg NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
-          -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+        sudo buildctl build \
+          --frontend=dockerfile.v0 \
+          --opt build-arg:NODE_ENV=development \
+          --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
+          --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
+          --export-cache type=local,dest=/tmp/dockercache \
+          --import-cache type=local,src=/tmp/dokcercache \
+          --output type=image,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG,push=true
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
 
     - name: Get Task Definition
