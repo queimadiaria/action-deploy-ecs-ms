@@ -86,7 +86,7 @@ runs:
           sudo buildctl build \
             --frontend=dockerfile.v0 \
             --local context=${{ github.workspace }} \
-            --local dockerfile=${{ github.workspace }}/Dockerfile \
+            --local dockerfile=${{ github.workspace }} \
             --opt build-arg:NODE_ENV=development \
             --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
             --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
