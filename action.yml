@@ -32,10 +32,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Change docker storage placement
-      shell: bash
-      run: |
-        mv /var/docker/images  /tmp/cache
     - name: Setup Buildctl
       shell: bash
       run: |
