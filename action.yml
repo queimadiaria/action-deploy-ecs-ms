@@ -70,14 +70,25 @@ runs:
         IMAGE_TAG: ${{ github.sha }}
       run: |
         # sudo buildkitd --oci-worker=false --containerd-worker=true &
-        sudo buildctl build \
-          --frontend=dockerfile.v0 \
-          --opt build-arg:NODE_ENV=development \
-          --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
-          --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
-          --export-cache type=local,dest=/tmp/dockercache \
-          --import-cache type=local,src=/tmp/dockercache \
-          --output type=image,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG,push=true
+        if [ -f "/tmp/dockercache/index.json" ];
+        then
+          sudo buildctl build \
+            --frontend=dockerfile.v0 \
+            --opt build-arg:NODE_ENV=development \
+            --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
+            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
+            --export-cache type=local,dest=/tmp/dockercache \
+            --import-cache type=local,src=/tmp/dockercache \
+            --output type=image,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG,push=true
+        else
+          sudo buildctl build \
+            --frontend=dockerfile.v0 \
+            --opt build-arg:NODE_ENV=development \
+            --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
+            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
+            --export-cache type=local,dest=/tmp/dockercache \
+            --output type=image,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG,push=true
+        fi
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
 
     - name: Get Task Definition
