@@ -69,6 +69,7 @@ runs:
         ECR_REGISTRY: ${{ inputs.ecr }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}
         (sudo buildkitd --oci-worker=false --containerd-worker=true || echo working) & 
         sleep 3
         if [ -f "/tmp/dockercache/index.json" ];
