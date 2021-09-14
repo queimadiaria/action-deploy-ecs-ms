@@ -13,7 +13,6 @@ inputs:
   environment_acronym: 
     description: Environment acronym to configure environment variables
     required: true
-    default: dev
   config:
     description: String JSON to be map
     required: true
@@ -22,6 +21,9 @@ inputs:
     description: Enable returning task definition
     required: true
     default: 'true'
+  service_name: 
+    description: Service name
+    required: true
   ecr:
     description: ECR Repository
     required: true
@@ -80,7 +82,7 @@ runs:
             --local dockerfile=${{ github.workspace }} \
             --opt build-arg:NODE_ENV=development \
             --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
-            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
+            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service_name }}-${{ inputs.stage }} \
             --export-cache type=local,dest=/tmp/dockercache \
             --import-cache type=local,src=/tmp/dockercache \
             --output type=docker,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG | docker load
@@ -92,7 +94,7 @@ runs:
             --local dockerfile=${{ github.workspace }} \
             --opt build-arg:NODE_ENV=development \
             --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
-            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service-name }}-${{ inputs.service-stage }} \
+            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service_name }}-${{ inputs.stage }} \
             --export-cache type=local,dest=/tmp/dockercache \
             --output type=docker,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG | docker load
         fi
