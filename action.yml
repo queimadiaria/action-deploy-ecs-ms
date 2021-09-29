@@ -71,34 +71,24 @@ runs:
         ECR_REGISTRY: ${{ inputs.ecr }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        (sudo buildkitd --oci-worker=false --containerd-worker=true || echo working) & 
         sleep 3
         [ "${{inputs.stage}}" = "dev" ] && export NODE_ENV=development || export NODE_ENV=production
-        if [ -f "/tmp/dockercache/index.json" ];
-        then
-          echo "building with cache"
-          sudo buildctl build \
-            --frontend=dockerfile.v0 \
-            --local context=${{ github.workspace }} \
-            --local dockerfile=${{ github.workspace }} \
-            --opt build-arg:NODE_ENV=${NODE_ENV} \
-            --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
-            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service_name }}-${{ inputs.stage }} \
-            --export-cache type=local,dest=/tmp/dockercache \
-            --import-cache type=local,src=/tmp/dockercache \
-            --output type=docker,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG | docker load
-        else
-          echo "building without cache"
-          sudo buildctl build \
-            --frontend=dockerfile.v0 \
-            --local context=${{ github.workspace }} \
-            --local dockerfile=${{ github.workspace }} \
-            --opt build-arg:NODE_ENV=${NODE_ENV} \
-            --opt build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
-            --opt build-arg:NEW_RELIC_APP_NAME=${{ inputs.service_name }}-${{ inputs.stage }} \
-            --export-cache type=local,dest=/tmp/dockercache \
-            --output type=docker,name=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG | docker load
-        fi
+        
+        echo ""
+        echo "building without cache"
+        echo ""
+        
+        docker build \
+          -f ${{ github.workspace }}/Dockerfile \
+          --build-arg:NODE_ENV=${NODE_ENV} \
+          --build-arg:NEW_RELIC_LICENSE_KEY=${{ inputs.new_relic_license }} \
+          --build-arg:NEW_RELIC_APP_NAME=${{ inputs.service_name }}-${{ inputs.stage }} \
+          -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG ${{ github.workspace }}
+        
+        echo ""
+        echo "Builded"
+        echo ""
+        
         docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
 
