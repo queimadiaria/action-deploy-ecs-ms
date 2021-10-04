@@ -50,7 +50,7 @@ runs:
         $(echo $CONFIG | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]")
         EOF
         source configs
-        sh config/environment.config.sh
+        bash config/environment.config.sh
         cat .env
     
     - name: Configure NPM
