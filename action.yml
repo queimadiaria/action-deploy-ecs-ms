@@ -72,7 +72,8 @@ runs:
         IMAGE_TAG: ${{ github.sha }}
       run: |
         sleep 3
-        [ "${{inputs.stage}}" = "dev" ] && export NODE_ENV=development || export NODE_ENV=production
+        [ "${{inputs.stage}}" = "dev" ] && export NODE_ENV=development || export NODE_ENV=production 
+        [ "${{inputs.stage}}" = "hml" ] && export NODE_ENV=hml 
         
         echo ""
         echo "building without cache"
