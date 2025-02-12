@@ -110,7 +110,8 @@ runs:
           
         cat taskDefinition.json
 
-    # Usar o valor da variável CLUSTER diretamente do workflow
-    echo "CLUSTER=${{ env.CLUSTER }}" >> $GITHUB_ENV
-    echo "Cluster definido como: ${{ env.CLUSTER }}"
-
+        CLUSTER=$(aws ecs list-clusters | \
+          jq ".clusterArns[]" -r | \
+          cut -d "/" -f2 | \
+          grep ${{ inputs.stage }})
+        echo "CLUSTER=$CLUSTER" >> $GITHUB_ENV
