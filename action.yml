@@ -110,8 +110,5 @@ runs:
           
         cat taskDefinition.json
 
-        CLUSTER=$(aws ecs list-clusters | \
-          jq ".clusterArns[]" -r | \
-          cut -d "/" -f2 | \
-          grep ${{ inputs.stage }})
+        CLUSTER=qd-ecs-cluster-dev
         echo "CLUSTER=$CLUSTER" >> $GITHUB_ENV
