@@ -98,6 +98,7 @@ runs:
       shell: bash
       env:
         ENABLE_TASK: ${{ inputs.enable_task_definition }}
+        ECS_CLUSTER: ${{ inputs.ecs_cluster }}
       run: |
         [ "$ENABLE_TASK" = true ] || exit 0
         echo "Describing task-${SERVICE_NAME}"
@@ -110,5 +111,4 @@ runs:
           
         cat taskDefinition.json
 
-        CLUSTER=qd-ecs-cluster-dev
-        echo "CLUSTER=$CLUSTER" >> $GITHUB_ENV
+        echo "CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
